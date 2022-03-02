@@ -21,7 +21,7 @@ Install the JS and Python dependencies:
 
 ```bash
 yarn
-python3 -m pip install perspective-python websocket-client
+python3 -m pip install perspective-python==0.10.2 websocket-client
 ```
 
 ### Build and Run
@@ -36,4 +36,20 @@ and in another terminal window:
 
 ```bash
 yarn start:server
+```
+
+execute on chrome console
+```
+window.workspace.restore({
+    detail: {
+        main: {
+            currentIndex: 0,
+            type: "tab-area",
+            widgets: ["flat"],
+        },
+    },
+    viewers: {
+        flat: {table: "order_book"},
+    },
+})
 ```
