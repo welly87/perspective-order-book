@@ -6,6 +6,7 @@ from argparse import ArgumentParser
 from datetime import datetime
 from time import sleep
 
+import args as args
 import tornado.ioloop
 import tornado.web
 import tornado.websocket
@@ -32,13 +33,11 @@ class GeminiOrderBookDataSource(object):
         parser.add_argument('-s', '--stream_id', type=int, default=1)
 
         args = parser.parse_args()
-        context = Context(
-            aeron_dir=args.prefix,
-            new_subscription_handler=lambda *args: print(f'new subscription {args}'),
-            available_image_handler=lambda *args: print(f'available image {args}'),
-            unavailable_image_handler=lambda *args: print(f'unavailable image {args}'))
+        self.aeron_dir = args.prefix
+        self.channel = args.channel
+        self.stream_id = args.stream_id
 
-        self.subscription = context.add_subscription(args.channel, args.stream_id)
+
 
     def start(self):
         """Make the API connection."""
@@ -46,10 +45,17 @@ class GeminiOrderBookDataSource(object):
         # self.ws = websocket.WebSocketApp(self.url, on_message=self.on_message)
         # self.ws.run_forever(sslopt={"cert_reqs": ssl.CERT_NONE})
 
+        context = Context(
+            aeron_dir=self.aeron_dir,
+            new_subscription_handler=lambda *args: print(f'new subscription {args}'),
+            available_image_handler=lambda *args: print(f'available image {args}'),
+            unavailable_image_handler=lambda *args: print(f'unavailable image {args}'))
+
+        subscription = context.add_subscription(self.channel, self.stream_id)
         while True:
-            fragments_read = self.subscription.poll(self.on_message)
+            fragments_read = subscription.poll(self.on_message)
             if fragments_read == 0:
-                eos_count = self.subscription.poll_eos(lambda *args: print(f'end of stream: {args}'))
+                eos_count = subscription.poll_eos(lambda *args: print(f'end of stream: {args}'))
                 if eos_count > 0:
                     break
 
