@@ -6,3 +6,4 @@ __pycache__
 .pyc
 yarn-error.log
 nohup.out
+.idea
