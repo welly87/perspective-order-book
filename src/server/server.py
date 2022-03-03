@@ -6,7 +6,6 @@ from argparse import ArgumentParser
 from datetime import datetime
 from time import sleep
 
-import args as args
 import tornado.ioloop
 import tornado.web
 import tornado.websocket
@@ -36,8 +35,6 @@ class GeminiOrderBookDataSource(object):
         self.aeron_dir = args.prefix
         self.channel = args.channel
         self.stream_id = args.stream_id
-
-
 
     def start(self):
         """Make the API connection."""
