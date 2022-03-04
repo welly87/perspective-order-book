@@ -1,6 +1,7 @@
 import json
 import logging
 import multiprocessing as mp
+import struct
 import threading
 from argparse import ArgumentParser
 from datetime import datetime
@@ -88,9 +89,12 @@ class GeminiOrderBookDataSource(object):
             return
 
         memory = memoryview(msg)
-        print(bytes(memory))
+        # b = bytes(memory)
 
-        msg = json.loads(msg)
+        v = struct.unpack_from('lllliilli', memory)
+        print(v)
+
+        # msg = json.loads(msg)
         self.data_queue.put(self.format_msg(msg))
 
 
