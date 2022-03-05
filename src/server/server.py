@@ -1,4 +1,3 @@
-import json
 import logging
 import multiprocessing as mp
 import struct
@@ -91,11 +90,46 @@ class GeminiOrderBookDataSource(object):
         memory = memoryview(msg)
         # b = bytes(memory)
 
-        v = struct.unpack_from('lllliilli', memory)
-        print(v)
+        offset = 0
+
+        event = {}
+
+        def read_string(off):
+            str_len = struct.unpack_from("i", memory, off)[0]
+            off += 4
+
+            val = str(memory[off: off + str_len], 'ascii')
+            print(val)
+            off += str_len
+            return off, val
+
+        offset, symbol = read_string(offset)
+        event["symbol"] = symbol
+
+        offset, timestamp = read_string(offset)
+        event["timestamp"] = timestamp
+
+        offset, side = read_string(offset)
+        event["side"] = side
+
+        offset, action = read_string(offset)
+        event["action"] = action
+
+        offset, order_id = read_string(offset)
+        event["order_id"] = order_id
+
+        offset, client_id = read_string(offset)
+        event["client_id"] = client_id
+
+        print(symbol, side, action, order_id, client_id)
+
+        price, initial, size, filled, post_only, ioc, delta, signed_delta, diff_price, diff_size, tick_size, contract_size = struct.unpack_from(
+            '4l2i2l2i2d', memory[offset:])
+
+        print(price, initial, size, filled, post_only, ioc, delta, signed_delta, diff_price, diff_size, tick_size, contract_size)
 
         # msg = json.loads(msg)
-        self.data_queue.put(self.format_msg(msg))
+        # self.data_queue.put(self.format_msg(msg))
 
 
 MANAGER = PerspectiveManager()
