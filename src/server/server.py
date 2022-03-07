@@ -58,27 +58,27 @@ class GeminiOrderBookDataSource(object):
 
             sleep(0.1)
 
-    def format_msg(self, msg):
-        """Given a message from the Gemini order book, format it properly
-        for the Perspective table."""
-        formatted = []
-        timestamp = msg.get("timestamp")
-
-        if timestamp:
-            timestamp = datetime.fromtimestamp(timestamp)
-        else:
-            timestamp = datetime.now()
-
-        for event in msg["events"]:
-            event["symbol"] = self.symbol
-            event["timestamp"] = timestamp
-            event["price"] = float(event["price"])
-            event["remaining"] = float(event["remaining"])
-            event["delta"] = float(event["delta"])
-
-            formatted.append(event)
-
-        return formatted
+    # def format_msg(self, msg):
+    #     """Given a message from the Gemini order book, format it properly
+    #     for the Perspective table."""
+    #     formatted = []
+    #     timestamp = msg.get("timestamp")
+    #
+    #     if timestamp:
+    #         timestamp = datetime.fromtimestamp(timestamp)
+    #     else:
+    #         timestamp = datetime.now()
+    #
+    #     for event in msg["events"]:
+    #         event["symbol"] = self.symbol
+    #         event["timestamp"] = timestamp
+    #         event["price"] = float(event["price"])
+    #         event["remaining"] = float(event["remaining"])
+    #         event["delta"] = float(event["delta"])
+    #
+    #         formatted.append(event)
+    #
+    #     return formatted
 
     def on_message(self, msg):
         """Format the message from Gemini and add it to the queue so
@@ -99,7 +99,7 @@ class GeminiOrderBookDataSource(object):
             off += 4
 
             val = str(memory[off: off + str_len], 'ascii')
-            print(val)
+            # print(val)
             off += str_len
             return off, val
 
@@ -107,13 +107,14 @@ class GeminiOrderBookDataSource(object):
         event["symbol"] = symbol
 
         offset, timestamp = read_string(offset)
-        event["timestamp"] = timestamp
+        # event["timestamp"] = datetime.fromtimestamp(timestamp)
+        event["timestamp"] = datetime.now()
 
         offset, side = read_string(offset)
         event["side"] = side
 
         offset, action = read_string(offset)
-        event["action"] = action
+        event["type"] = action
 
         offset, order_id = read_string(offset)
         event["order_id"] = order_id
@@ -121,15 +122,25 @@ class GeminiOrderBookDataSource(object):
         offset, client_id = read_string(offset)
         event["client_id"] = client_id
 
-        print(symbol, side, action, order_id, client_id)
+        # print(symbol, side, action, order_id, client_id)
 
         price, initial, size, filled, post_only, ioc, delta, signed_delta, diff_price, diff_size, tick_size, contract_size = struct.unpack_from(
             '4l2i2l2i2d', memory[offset:])
 
-        print(price, initial, size, filled, post_only, ioc, delta, signed_delta, diff_price, diff_size, tick_size, contract_size)
+        event["price"] = float(price)
+
+        event["reason"] = client_id
+
+        event["delta"] = float(delta)
+
+        event["remaining"] = float(size)
+        #
+        # print(price, initial, size, filled, post_only, ioc, delta, signed_delta, diff_price, diff_size, tick_size,
+        #       contract_size)
 
         # msg = json.loads(msg)
         # self.data_queue.put(self.format_msg(msg))
+        self.data_queue.put([event])
 
 
 MANAGER = PerspectiveManager()
@@ -161,6 +172,7 @@ def fetch_data(table, data_queue):
     the operation on the Perspective thread."""
     while True:
         data = data_queue.get()
+        print(data)
         PSP_LOOP.add_callback(table.update, data)
 
 
